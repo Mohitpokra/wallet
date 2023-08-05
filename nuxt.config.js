@@ -78,4 +78,7 @@ export default {
   serverMiddleware: {
     '/api': '~/server'
   },
+  http: {
+    baseURL: 'https://wallet-high-level-9cf821e9dba6.herokuapp.com',
+  },
 }
