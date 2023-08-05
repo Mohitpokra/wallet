@@ -1,0 +1,4 @@
+module.exports = Object.freeze({
+    dbUrl: 'mongodb+srv://root:tHs5G4Y24n82zonn@cluster0.v1hql0j.mongodb.net/wallet',
+    MAX_INT_VALIDATION: 2147483647,
+});
