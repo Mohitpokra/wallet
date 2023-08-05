@@ -38,12 +38,11 @@
               ></v-text-field>
 
               <v-text-field
-                v-model="transactionAmount"
                 :rules="balanceRules"
-                @input="handleInput"
-                label="Balance"
+                @input="handleInput($event, 'transactionAmount')"
+                label="Amount"
                 required
-                type="number"
+                type="string"
               ></v-text-field>
 
               <v-switch
@@ -103,12 +102,13 @@
                 ></v-text-field>
 
                 <v-text-field
-                  v-model="balance"
-                  @input="handleInput"
+                  :value="balance"
+                  @input="handleInput($event, 'balance')"
                   :rules="balanceRules"
-                  label="Balance"
+                  label="Balances"
+                  step="any"
                   required
-                  type="number"
+                  type="string"
                 ></v-text-field>
 
                 <v-switch
@@ -160,7 +160,8 @@ export default {
     ],
     balanceRules: [
       (v) => !!v || "Balance is required",
-      (v) => v < 2147483647 && v > 0 || "Balance should be less than 2147483647 and greater than 0",
+      (v) => /^\d*\.?\d*$/.test(v) || 'Only numbers are allowed',
+      (v) => Number(v) < 2147483647 && Number(v) > 0 || "Balance should be less than 2147483647 and greater than 0",
     ],
   }),
   created() {
@@ -171,6 +172,17 @@ export default {
     }
   },
   methods: {
+    handleInput(val, key) {
+      if(val) {
+        const indexOfDecimal = val.indexOf('.');
+        if (indexOfDecimal !== -1 && val.length - indexOfDecimal > 5) {
+          // Format the input value to have up to four decimal places
+          this[key] = Number(val).toFixed(4);
+        } else {
+          this[key] = Number(val);
+        }
+      }
+    },
     async fetchWalletData() {
       try {
         let walletId = localStorage.getItem("walletId");
@@ -212,9 +224,6 @@ export default {
         this.balanceLoading = false;
       }
     },
-   handleInput() {
-     this.balance = Math.abs(this.balance);
-   }
   },
 };
 </script>
