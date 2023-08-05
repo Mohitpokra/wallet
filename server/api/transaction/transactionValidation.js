@@ -4,7 +4,7 @@ const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
 
 const addTransactionValidation = Joi.object({
-    amount: Joi.number().valid(Joi.number().not(0)).precision(4).max(MAX_INT_VALIDATION).required(),
+    amount: Joi.number().invalid(0).precision(4).max(MAX_INT_VALIDATION).required(),
     description: Joi.string().required(),
 }).required();
 

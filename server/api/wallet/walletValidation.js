@@ -5,7 +5,7 @@ Joi.objectId = require('joi-objectid')(Joi);
 
 const walletSetupValidation = Joi.object({
     name: Joi.string().required(),
-    balance: Joi.number().valid(Joi.number().not(0)).precision(4).max(MAX_INT_VALIDATION).required(),
+    balance: Joi.number().invalid(0).precision(4).max(MAX_INT_VALIDATION).required(),
 }).required();
 
 const walletIdValidation = Joi.object({
