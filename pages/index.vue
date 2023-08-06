@@ -197,6 +197,7 @@ export default {
           name: this.name,
           balance: balance || 0,
         });
+        this.transitionType = 0;
         localStorage.setItem("walletId", this.wallet.id);
       } catch (err) {
         this.snackbar = true;
