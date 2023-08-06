@@ -192,7 +192,7 @@ export default {
     },
     async addWallet() {
       try {
-        const balance = this.transitionType ? +this.balance : this.balance;
+        const balance = this.transitionType ? -this.balance : this.balance;
         this.wallet = await this.$http.$post("/api/v1/wallet/setup", {
           name: this.name,
           balance: balance || 0,
