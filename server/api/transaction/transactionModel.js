@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
 const TransactionSchema = new mongoose.Schema({
-    wallet : {
+    walletId : {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'wallets',
+        required: true,
+    },
+    balance : {
+        type: Number,
         required: true,
     },
     amount: {
@@ -17,9 +20,14 @@ const TransactionSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true,
+    },
+    version: {
+        type: Number,
+        default: 0
     }
 }, {timestamps: true});
 
+TransactionSchema.index({ walletId: 1, version: 1 }, { unique: true});
 
 const Transaction = mongoose.model('transactions', TransactionSchema);
 

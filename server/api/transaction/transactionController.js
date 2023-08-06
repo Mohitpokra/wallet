@@ -1,7 +1,4 @@
-const mongoose = require('mongoose');
 const Transaction = require('./transactionModel');
-const Wallet = require('../wallet/walletModel');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 module.exports.addTransactionToWallet = async function (req, resp, next) {
     let retryCount = 0;
@@ -9,52 +6,39 @@ module.exports.addTransactionToWallet = async function (req, resp, next) {
     const { walletId } = req.params;
     try {
         while (retryCount < 5) {
-            let session;
             try {
-                session = await mongoose.startSession();
-                session.startTransaction();
+                const transaction = await Transaction.findOne({ walletId: walletId}).sort({ version: -1 });
+                const newBalance = transaction.balance + amount;
+                const version = ++transaction.version;
 
                 let trans = new Transaction({
-                    wallet: walletId,
+                    balance: newBalance,
+                    walletId,
                     amount: Math.abs(amount),
                     description,
+                    version,
                     type: amount > 0 ? 'credit' : 'debit'
                 });
 
-                trans = await trans.save({ session });
-                let wallet = await Wallet.findById(walletId).session(session);
-                if (!wallet) {
-                    throw new Error('Wallet Not found');
-                }
-
-                wallet.balance += amount;
-                wallet.type = amount > 0 ? 'credit' : 'debit'
-                wallet.version++;
-                wallet = await wallet.save({ session });
-
-                // Commit the transaction and end the session
-                await session.commitTransaction();
-                session.endSession();
+                trans = await trans.save();
 
                 return resp.json({
                     transactionId: trans._id,
-                    balance: wallet.balance
+                    balance: trans.balance
                 });
 
             } catch (error) {
-                await session.abortTransaction();
-                session.endSession();
-
                 // If the error is due to optimistic locking (version mismatch),
                 // we will retry the transaction
                 if (error.name === 'MongoError' && error.code === 11000) {
-                    retryCount++;
                     console.log('Optimistic locking: Retry', retryCount);
+                    retryCount++;
                     continue;
                 }
 
                 // For other errors, handle appropriately (e.g., log, throw, etc.)
                 console.error('Transaction failed:', error.message);
+                throw error;
             }
         }
 
@@ -71,7 +55,7 @@ module.exports.getWalletTransaction = async function (req, resp, next) {
     const sortOrder = isDesc ? 'desc' : 'asc';
 
     const condition = {
-        wallet: walletId
+        walletId: walletId
     }
 
     let query = Transaction.find(condition);
@@ -85,8 +69,7 @@ module.exports.getWalletTransaction = async function (req, resp, next) {
        query = query.limit(Number(limit))
     }
     try {
-        let result = await query
-            .populate('wallet');
+        let result = await query;
 
         // Step 2: Get the total count of documents without pagination
         const totalCount = await Transaction.countDocuments(condition);
@@ -98,9 +81,9 @@ module.exports.getWalletTransaction = async function (req, resp, next) {
         result = result.map((item) => {
             return {
                 id: item._id,
-                walletId: item.wallet._id,
+                walletId: item.walletId,
                 amount: item.amount,
-                balance: item.wallet.balance,
+                balance: item.balance,
                 description: item.description,
                 updatedAt: new Date(item.updatedAt),
                 type: item.type,

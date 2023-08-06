@@ -49,6 +49,7 @@ export default {
         },
         { text: "Description", value: "description",  sortable: false },
         { text: "amount", value: "amount" },
+        { text: "balance", value: "balance" },
         { text: "date", value: "updatedAt" },
         { text: "type", value: "type", sortable: false},
         { text: "walletId", value: "walletId",  sortable: false }

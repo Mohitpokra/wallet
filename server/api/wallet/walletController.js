@@ -13,7 +13,6 @@ module.exports.setupWallet = async function (req, res, next) {
             session.startTransaction();
             wallet = new Wallet({
                 name,
-                balance,
             });
 
             // Save the wallet to the database
@@ -21,9 +20,10 @@ module.exports.setupWallet = async function (req, res, next) {
 
             // Create a new transaction for the initial deposit
             initTrans = new Transaction({
-                wallet: wallet._id,
-                amount: balance,
-                type: 'credit',
+                walletId: wallet._id,
+                balance: balance || 0,
+                amount: Math.abs(balance),
+                type: balance > 0 ? 'credit' : 'debit',
                 description: 'Initial Deposit'
             });
 
@@ -38,11 +38,12 @@ module.exports.setupWallet = async function (req, res, next) {
             await session.abortTransaction();
             session.endSession();
             console.error('Error creating wallet:', error.message);
+            throw error;
         }
 
         return res.json({
             id: wallet._id,
-            balance: wallet.balance,
+            balance: initTrans.balance,
             transactionId: initTrans._id,
             name: wallet.name,
             date: new Date(wallet.createdAt),
@@ -57,12 +58,13 @@ module.exports.getWalletDetails = async function (req, resp, next) {
     const { id } = req.params
     try {
        const wallet =  await Wallet.findById(id)
+       const transaction = await Transaction.findOne({ walletId: id}).sort({ version: -1 });
        if(!wallet) {
          return resp.status(404).send({ error: 'Document not found'});
        }
        return resp.json({
             id: wallet._id,
-            balance: wallet.balance,
+            balance: transaction.balance,
             name: wallet.name,
             date: new Date(wallet.createdAt),
        });

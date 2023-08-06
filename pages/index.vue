@@ -47,7 +47,7 @@
 
               <v-switch
                 v-model="transitionType"
-                :label="transitionType ? 'Credit' : 'Debit'"
+                :label="transitionType ? 'Debit' : 'Credit'"
               ></v-switch>
 
               <v-card-actions class="justify-center">
@@ -107,13 +107,12 @@
                   :rules="balanceRules"
                   label="Balances"
                   step="any"
-                  required
                   type="string"
                 ></v-text-field>
 
                 <v-switch
                 v-model="transitionType"
-                :label="transitionType ? 'Credit' : 'Debit'"
+                :label="transitionType ? 'Debit' : 'Credit'"
               ></v-switch>
 
                 <v-card-actions class="justify-center">
@@ -148,7 +147,7 @@ export default {
     description: "",
     snackbar: false,
     err: "",
-    transitionType: 1,
+    transitionType: 0,
     timeout: 2000,
     descriptionRules: [
       (v) => !!v || "Name is required",
@@ -159,8 +158,7 @@ export default {
       (v) => (v && v.length <= 20) || "Name must be less than 20 characters",
     ],
     balanceRules: [
-      (v) => !!v || "Balance is required",
-      (v) => /^\d*\.?\d*$/.test(v) || 'Only numbers are allowed',
+      (v) => /^\d*\.?\d*$/.test(v) || 'Only Positive numbers are allowed',
       (v) => Number(v) < 2147483647 && Number(v) > 0 || "Balance should be less than 2147483647 and greater than 0",
     ],
   }),
@@ -194,9 +192,10 @@ export default {
     },
     async addWallet() {
       try {
+        const balance = this.transitionType ? +this.balance : this.balance;
         this.wallet = await this.$http.$post("/api/v1/wallet/setup", {
           name: this.name,
-          balance: this.transitionType ? this.balance : -this.balance,
+          balance: balance || 0,
         });
         localStorage.setItem("walletId", this.wallet.id);
       } catch (err) {
@@ -212,7 +211,7 @@ export default {
           `/api/v1/transactions/${walletId}`,
           {
             description: this.description,
-            amount: this.transitionType ? this.transactionAmount : -this.transactionAmount,
+            amount: this.transitionType ? -this.transactionAmount : this.transactionAmount,
           }
         );
         this.$refs.walletForm.reset()
